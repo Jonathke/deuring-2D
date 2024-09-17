@@ -14,7 +14,7 @@ class Deuring2D:
 
         self.F = GF((p, 2), name = "i", modulus=[1,0,1])
         self.E0 = EllipticCurve(self.F, [1, 0])
-        self.e = Integer(p+1).valuation(2)-1 #the -1 is there to avoid field extensions
+        self.e = Integer(p+1).valuation(2) #the -1 is there to avoid field extensions
         
         #generate 2-torsion basis
         cofac = (p+1)/(2**self.e)
@@ -58,13 +58,11 @@ class Deuring2D:
         d = lcm(c.denominator() for c in alpha)
 
         if gcd(d, ord) == 2:
-            #make sure to never call this when you have to go to ext fields for now
-            #done by setting e one smaller than necessary
+            #TODO should probably make sure this doesnt need to be called
             alpha = d*alpha
-            #Fbig, _ = self.F.extension(4,'A').objgen()
-            #Ebig = self.E0.base_extend(Fbig)
-            #P = Ebig(P).division_points(2)[0]
-            P = P.division_points(2)[0]
+            Fbig, _ = self.F.extension(4,'A').objgen()
+            Ebig = self.E0.base_extend(Fbig)
+            P = Ebig(P).division_points(2)[0]
 
         iP = self.iota(P)
         jP = self.pi(P)
@@ -80,7 +78,6 @@ class Deuring2D:
         assert u < 2**self.e
 
         theta = self.O0.FullRepresentInteger(u*(2**self.e - u))
-        print(theta)
         assert theta.reduced_norm() == u*(2**self.e - u)
         thetaP = self.EvalEndomorphism(theta, self.P, 2**self.e)
         thetaQ = self.EvalEndomorphism(theta, self.Q, 2**self.e)
@@ -124,8 +121,8 @@ class Deuring2D:
         d1 = beta_1.reduced_norm()/N_I
         theta = (beta_2*beta_1.conjugate())/N_I
 
-        _, uP, uQ = self.FixedDegreeIsogeny(u)
-        _, vP, vQ = self.FixedDegreeIsogeny(v)
+        Phi_u, uP, uQ = self.FixedDegreeIsogeny(u)
+        Phi_v, vP, vQ = self.FixedDegreeIsogeny(v)
 
         print(theta)
         e1 = 2**(self.e-f)
@@ -135,10 +132,25 @@ class Deuring2D:
         thetaP = self.EvalEndomorphism(theta, self.P, 2**self.e)
         thetaQ = self.EvalEndomorphism(theta, self.Q, 2**self.e)
 
-        x_P, y_P = BiDLP(thetaP, self.P, self.Q, 2**self.e)
-        x_Q, y_Q = BiDLP(thetaQ, self.P, self.Q, 2**self.e)
+        beta1P = self.EvalEndomorphism(beta_1, self.P, 2**self.e)
+        beta2P = self.EvalEndomorphism(beta_2, self.P, 2**self.e)
+        beta1Q = self.EvalEndomorphism(beta_1, self.Q, 2**self.e)
+        beta2Q = self.EvalEndomorphism(beta_2, self.Q, 2**self.e)
 
-        Phi = IsogenyProduct(e1*d1*uP, e1*(x_P*vP + y_P*vQ), e1*d1*uQ, e1*(x_Q*vP + y_Q*vQ), f)
+        x1_P, y1_P = BiDLP(beta1P, self.P, self.Q, 2**self.e)
+        x2_P, y2_P = BiDLP(beta2P, self.P, self.Q, 2**self.e)
+
+        x1_Q, y1_Q = BiDLP(beta1Q, self.P, self.Q, 2**self.e)
+        x2_Q, y2_Q = BiDLP(beta2Q, self.P, self.Q, 2**self.e)
+        #assert thetaP == x_P*self.P + y_P*self.Q
+        #assert thetaQ == x_Q*self.P + y_Q*self.Q
+
+        Phi = IsogenyProduct(e1*d1*uP, e1*Phi_v.EvalTopLeft(thetaP), e1*d1*uQ, e1*(Phi_v.EvalTopLeft(thetaQ)), f)
+        #Phi = IsogenyProduct(e1*(Phi_u.EvalTopLeft(beta1P)), e1*(Phi_v.EvalTopLeft(beta2P)), e1*(Phi_u.EvalTopLeft(beta1Q)), e1*(Phi_v.EvalTopLeft(beta2Q)), f)
+        #from theta_structures.couple_point import CouplePoint
+        #from theta_isogenies.product_isogeny_sqrt import EllipticProductIsogenySqrt
+
+        #Phi = EllipticProductIsogenySqrt((CouplePoint(e1*d1*uP, e1*(x_P*vP + y_P*vQ)), CouplePoint(e1*d1*uQ, e1*(x_Q*vP + y_Q*vQ))), f)
 
         E_I, E_aux = Phi.codomain()
         print(E_I)
