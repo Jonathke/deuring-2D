@@ -30,3 +30,6 @@ def ReducedBasis(basis):
     U = G.LLL_gram().transpose()
     reduced_basis_elements = _matrix_to_gens(U, basis)
     return reduced_basis_elements
+
+def SuccessiveMinima(L):
+    return [RR(alpha.reduced_norm()) for alpha in ReducedBasis(L.basis())]

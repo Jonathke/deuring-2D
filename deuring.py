@@ -1,6 +1,6 @@
 from sage.all import *
 from special_extremal import SpecialExtremalOrder
-from quaternions import ReducedBasis
+from quaternions import ReducedBasis, SuccessiveMinima
 from product_isogeny import IsogenyProduct
 from utilities.discrete_log import BiDLP
 
@@ -14,7 +14,7 @@ class Deuring2D:
 
         self.F = GF((p, 2), name = "i", modulus=[1,0,1])
         self.E0 = EllipticCurve(self.F, [1, 0])
-        self.e = Integer(p+1).valuation(2) #the -1 is there to avoid field extensions
+        self.e = Integer(p+1).valuation(2) - 1 #the -1 is there to avoid field extensions
         
         #generate 2-torsion basis
         cofac = (p+1)/(2**self.e)
@@ -77,14 +77,16 @@ class Deuring2D:
         assert u%2 == 1
         assert u < 2**self.e
 
-        theta = self.O0.FullRepresentInteger(u*(2**self.e - u))
+        theta = self.O0.RepresentInteger(u*(2**self.e - u))
         assert theta.reduced_norm() == u*(2**self.e - u)
         thetaP = self.EvalEndomorphism(theta, self.P, 2**self.e)
         thetaQ = self.EvalEndomorphism(theta, self.Q, 2**self.e)
 
         Phi = IsogenyProduct(u*self.P, thetaP, u*self.Q, thetaQ, self.e, iota=self.iota)
         
-        return Phi, Phi.EvalTopLeft(self.P), Phi.EvalTopLeft(self.Q)
+        Ei, uP, uQ = Phi.TwoTorsionImage(self.P, self.Q, self.e, u)
+
+        return Phi, uP, uQ
 
 
     def SuitableIdeals(self, I):
@@ -105,6 +107,7 @@ class Deuring2D:
             v = (2**self.e - u*d1)/d2
             if v <= 0:
                 continue
+            assert u*d1 + v*d2 == 2**self.e
             e1 = min(u.valuation(2), v.valuation(2))
             u = Integer(u/(2**e1))
             v = Integer(v/(2**e1))
@@ -124,34 +127,28 @@ class Deuring2D:
         Phi_u, uP, uQ = self.FixedDegreeIsogeny(u)
         Phi_v, vP, vQ = self.FixedDegreeIsogeny(v)
 
-        print(theta)
         e1 = 2**(self.e-f)
-        print(f"{f=}")
-        print(f"{e1=}")
 
         thetaP = self.EvalEndomorphism(theta, self.P, 2**self.e)
         thetaQ = self.EvalEndomorphism(theta, self.Q, 2**self.e)
 
-        beta1P = self.EvalEndomorphism(beta_1, self.P, 2**self.e)
-        beta2P = self.EvalEndomorphism(beta_2, self.P, 2**self.e)
-        beta1Q = self.EvalEndomorphism(beta_1, self.Q, 2**self.e)
-        beta2Q = self.EvalEndomorphism(beta_2, self.Q, 2**self.e)
+        x_P, y_P = BiDLP(thetaP, self.P, self.Q, 2**self.e)
+        x_Q, y_Q = BiDLP(thetaQ, self.P, self.Q, 2**self.e)
 
-        x1_P, y1_P = BiDLP(beta1P, self.P, self.Q, 2**self.e)
-        x2_P, y2_P = BiDLP(beta2P, self.P, self.Q, 2**self.e)
+        assert thetaP == x_P*self.P + y_P*self.Q
+        assert thetaQ == x_Q*self.P + y_Q*self.Q
 
-        x1_Q, y1_Q = BiDLP(beta1Q, self.P, self.Q, 2**self.e)
-        x2_Q, y2_Q = BiDLP(beta2Q, self.P, self.Q, 2**self.e)
-        #assert thetaP == x_P*self.P + y_P*self.Q
-        #assert thetaQ == x_Q*self.P + y_Q*self.Q
+        Phi = IsogenyProduct(e1*d1*uP, e1*(x_P*vP + y_P*vQ), e1*d1*uQ, e1*(x_Q*vP + y_Q*vQ), f)
+        E_I, phi_1P, phi_1Q = Phi.TwoTorsionImage(uP, uQ, self.e, d1*u)
+        phi_1P = inverse_mod(u, 2**self.e)*phi_1P
+        phi_1Q = inverse_mod(u, 2**self.e)*phi_1Q
 
-        Phi = IsogenyProduct(e1*d1*uP, e1*Phi_v.EvalTopLeft(thetaP), e1*d1*uQ, e1*(Phi_v.EvalTopLeft(thetaQ)), f)
-        #Phi = IsogenyProduct(e1*(Phi_u.EvalTopLeft(beta1P)), e1*(Phi_v.EvalTopLeft(beta2P)), e1*(Phi_u.EvalTopLeft(beta1Q)), e1*(Phi_v.EvalTopLeft(beta2Q)), f)
-        #from theta_structures.couple_point import CouplePoint
-        #from theta_isogenies.product_isogeny_sqrt import EllipticProductIsogenySqrt
+        beta_1P = self.EvalEndomorphism(beta_1, self.P, 2**self.e)
+        beta_1Q = self.EvalEndomorphism(beta_1, self.Q, 2**self.e)
+        xx_P, yy_P = BiDLP(beta_1P, self.P, self.Q, 2**self.e)
+        xx_Q, yy_Q = BiDLP(beta_1Q, self.P, self.Q, 2**self.e)
 
-        #Phi = EllipticProductIsogenySqrt((CouplePoint(e1*d1*uP, e1*(x_P*vP + y_P*vQ)), CouplePoint(e1*d1*uQ, e1*(x_Q*vP + y_Q*vQ))), f)
+        phi_IP = inverse_mod(d1, 2**self.e)*(xx_P*phi_1P + yy_P*phi_1Q)
+        phi_IQ = inverse_mod(d1, 2**self.e)*(xx_Q*phi_1P + yy_Q*phi_1Q)
 
-        E_I, E_aux = Phi.codomain()
-        print(E_I)
-        print(E_aux)
+        return E_I, phi_IP, phi_IQ

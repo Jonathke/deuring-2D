@@ -1,5 +1,6 @@
 from deuring import *
 from special_extremal import *
+from quaternions import *
 
 def TestSpecialExtremal():
     p = 2**50*11 - 1
@@ -18,15 +19,27 @@ def TestFixedDegreeIsogeny():
     while u%2 == 0:
         u = randint(2**35, 2**36)
     Phi, imP, imQ = ctx.FixedDegreeIsogeny(u)
-
+    print(Phi.codomain()[0])
+    print(Phi.codomain()[0].j_invariant())
+    print(Phi.codomain()[1])
+    print(Phi.codomain()[1].j_invariant())
 
 def TestIdealToIsogeny():
     p = 2**50*11 - 1
     ctx = Deuring2D(p)
-    l = next_prime(randint(2**60, 2**61))
-    alpha = ctx.O0.FullRepresentInteger(l*next_prime(l))
+    l = next_prime(randint(2**50, 2**51))
+    ll = next_prime(l)
+    while not (ll % 4 == l % 4 == 1):
+        l = next_prime(randint(2**50, 2**51))
+        ll = next_prime(l)
+    alpha = ctx.O0.FullRepresentInteger(l*ll)
     I = ctx.O0.order * l + ctx.O0.order * alpha
-    ctx.IdealToIsogeny(I)
+    print(SuccessiveMinima(I.right_order()))
+    print(SuccessiveMinima(I.left_order()))
+    E_I, phi_IP, phi_IQ = ctx.IdealToIsogeny(I)
+
+    print(E_I)
+    print(E_I.j_invariant())
 
 if __name__=="__main__":
     #TestSpecialExtremal()

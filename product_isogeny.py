@@ -10,10 +10,14 @@ class IsogenyProduct:
         assert all([2**(deg-1)*R for R in [P1, P2, Q1, Q2]])
         assert all([not 2**(deg)*R for R in [P1, P2, Q1, Q2]])
 
+        assert Q1.curve() == P1.curve()
+        assert Q2.curve() == P2.curve()
 
+        self.domain = (P1.curve(), P2.curve())
         self.endomorphisms = []
         self.diagonal_isogenies = []
         self.iota = iota
+        self.deg = 2**deg
         index = 0
         if self.iota:
             P1_, P2_, Q1_, Q2_ = [2**(deg-1)*R for R in [P1, P2, Q1, Q2]]
@@ -24,11 +28,9 @@ class IsogenyProduct:
 
             while type_end:
                 index += 1
-                print(index)
                 P1, P2 = self.EvalEndomorphismType(type_end, P1, P2)
                 Q1, Q2 = self.EvalEndomorphismType(type_end, Q1, Q2)
                 P1_, P2_, Q1_, Q2_ = [2**(deg-1-index)*R for R in [P1, P2, Q1, Q2]]
-                print(P1_, P2_, Q1_, Q2_)
                 if not all([P1_, P2_, Q1_, Q2_]):
                     break
                 type_end = self.CheckEndomorphism(P1_, P2_, Q1_, Q2_)
@@ -88,13 +90,54 @@ class IsogenyProduct:
         phi_2 = E2.isogeny(R2, degree=2, model="montgomery")
 
         return phi_1, phi_2
+    
+    def TwoTorsionImage(self, P, Q, e, u):
+        assert all([2**(e-1)*R for R in [P, Q]])
+        assert all([not 2**e*R for R in [P, Q]])
+
+        ePQ = P.weil_pairing(Q, 2**e)
+
+        PmQ = P-Q
+        imP = self.EvalEmbedded(P)
+        imQ = self.EvalEmbedded(Q)
+        imPQ = self.EvalEmbedded(PmQ)
+
+        E1, E2 = self.codomain()
+
+        imP1 = imP[0]
+        imP2 = imP[1]
+
+        imQ1 = imQ[0]
+        imQ2 = imQ[1]
+
+        imPQ1 = imPQ[0]
+        imPQ2 = imPQ[1]
+
+        imP1, imQ1 = fix_minus_sign(imP1, imQ1, imPQ1)
+        imP2, imQ2 = fix_minus_sign(imP2, imQ2, imPQ2)
+        if ePQ**u == imP1.weil_pairing(imQ1, 2**e):
+            return E1, imP1, imQ1
         
-    def EvalTopLeft(self, P):
-        PP = (P, P.curve()(0))
+        if ePQ**u == imP2.weil_pairing(imQ2, 2**e):
+            return E2, imP2, imQ2
+        
+        raise ValueError
+
+    def EvalEmbedded(self, P):
+
+        PP = (P, self.domain[1](0))
         for type_end in self.endomorphisms:
             PP = self.EvalEndomorphismType(type_end, PP[0], PP[1])
 
         for phi_1, phi_2 in self.diagonal_isogenies:
             PP = (phi_1(PP[0]), phi_2(PP[1]))
 
-        return self.Phi(CouplePoint(PP[0], PP[1]))[0]
+        return self.Phi(CouplePoint(PP[0], PP[1]))
+
+
+def fix_minus_sign(P, Q, PQ):
+    if P-Q == PQ or P-Q == -PQ:
+        return P, Q
+    else:
+        assert P+Q == PQ or P+Q == -PQ
+        return P, -Q

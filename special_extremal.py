@@ -18,7 +18,7 @@ class SpecialExtremalOrder:
         
     def Cornacchia(self, N):
         N_prime = prod([l**e for l, e in factor(N, limit=100) if l < 100])
-        if not is_pseudoprime(N/N_prime):
+        if N/N_prime > 2**100 and not is_pseudoprime(N/N_prime):
             return None, None, False
         sol = self.QF.solve_integer(N)
         if not sol:
@@ -65,9 +65,8 @@ class SpecialExtremalOrder:
             if not found:
                 continue
             if x % 2 == w % 2 and y % 2 == z % 2 and gcd([x,y,z,w]) == 1:
-                if ((x - w) // 2) % 2 == 1 and ((z - y) // 2) % 2 == 1:
-                    gamma = x + y*self.i + z*self.j + w*self.k
-                    gamma = MakePrimitive(gamma,self.order)
-                    if gamma.reduced_norm() == N:
-                        return gamma
+                gamma = x + y*self.i + z*self.j + w*self.k
+                gamma = MakePrimitive(gamma,self.order)
+                if gamma.reduced_norm() == N:
+                    return gamma
         
