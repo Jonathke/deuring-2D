@@ -28,10 +28,28 @@ def TestIdealToIsogeny():
     p = 2**50*11 - 1
     ctx = Deuring2D(p)
     l = next_prime(randint(2**50, 2**51))
-    ll = next_prime(l)
-    while not (ll % 4 == l % 4 == 1):
-        l = next_prime(randint(2**50, 2**51))
-        ll = next_prime(l)
+    #ll = next_prime(l)
+    #while not (ll % 4 == l % 4 == 1):
+    #    l = next_prime(randint(2**20, 2**21))
+    #    ll = next_prime(randint(2**20, 2**21))
+    ll = next_prime(randint(2**50, 2**51))
+    alpha = ctx.O0.FullRepresentInteger(l*ll)
+    I = ctx.O0.order * l + ctx.O0.order * alpha
+    E_I, phi_IP, phi_IQ = ctx.IdealToIsogeny(I)
+
+    print(E_I)
+    print(E_I.j_invariant())
+
+def TestIdealToIsogenyBig():
+    print("---- Testing big stuff ----")
+    p = 2**500*27 - 1
+    ctx = Deuring2D(p)
+    l = next_prime(randint(p, 100*p))
+    #ll = next_prime(l)
+    #while not (ll % 4 == l % 4 == 1):
+    #    l = next_prime(randint(2**20, 2**21))
+    #    ll = next_prime(randint(2**20, 2**21))
+    ll = next_prime(randint(p, 100*p))
     alpha = ctx.O0.FullRepresentInteger(l*ll)
     I = ctx.O0.order * l + ctx.O0.order * alpha
     E_I, phi_IP, phi_IQ = ctx.IdealToIsogeny(I)
@@ -40,6 +58,8 @@ def TestIdealToIsogeny():
     print(E_I.j_invariant())
 
 if __name__=="__main__":
+    proof.all(False)
     #TestSpecialExtremal()
     TestFixedDegreeIsogeny()
     TestIdealToIsogeny()
+    TestIdealToIsogenyBig()

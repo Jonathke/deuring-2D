@@ -1,6 +1,7 @@
 from sage.all import *
 from quaternions import MakePrimitive
 
+# proof.all(False)
 # Class for a special p-extremal order, with corresponding functions
 class SpecialExtremalOrder:
     def __init__(self, p, q):
@@ -17,8 +18,10 @@ class SpecialExtremalOrder:
         self.QF = BinaryQF([1,0,q])
         
     def Cornacchia(self, N):
+        if N < 0:
+            return None, None, False
         N_prime = prod([l**e for l, e in factor(N, limit=100) if l < 100])
-        if N/N_prime > 2**100 and not is_pseudoprime(N/N_prime):
+        if N > 2**100 and not is_pseudoprime(N/N_prime):
             return None, None, False
         sol = self.QF.solve_integer(N)
         if not sol:

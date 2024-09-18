@@ -92,15 +92,12 @@ class Deuring2D:
     def SuitableIdeals(self, I):
         basis_I = ReducedBasis(I.basis())
         N_I = I.norm()
-        d = ceil(100*sqrt(self.p))
+        d = ceil(300*sqrt(self.p))
         Bs = [floor(sqrt(d/(alpha.reduced_norm()/N_I))/4) for alpha in basis_I]
         print([RR(log(lam/N_I, self.p)) for lam in SuccessiveMinima(I)])
         print(Bs)
         temp = basis_I[0]*basis_I[1].conjugate()
-        print(basis_I)
-        print(temp)
-        print(RR(log(temp.reduced_norm(),self.p)))
-        for _ in range(10000):
+        for _ in range(100000):
             xs = [randint(-B, B) for B in Bs]
             ys = [randint(-B, B) for B in Bs]
             beta_1 = sum(x*alpha for x, alpha in zip(xs, basis_I))
