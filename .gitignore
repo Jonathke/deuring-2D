@@ -1,0 +1,4 @@
+*.sage.py
+/theta_structures
+/theta_isogenies
+/utilities
