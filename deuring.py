@@ -14,7 +14,7 @@ class Deuring2D:
 
         self.F = GF((p, 2), name = "i", modulus=[1,0,1])
         self.E0 = EllipticCurve(self.F, [1, 0])
-        self.e = Integer(p+1).valuation(2) - 1 #the -1 is there to avoid field extensions
+        self.e = Integer(p+1).valuation(2) #can add -1 here to avoid field extensions
         
         #generate 2-torsion basis
         cofac = (p+1)/(2**self.e)
