@@ -151,4 +151,7 @@ class Deuring2D:
         phi_IP = inverse_mod(d1, 2**self.e)*(xx_P*phi_1P + yy_P*phi_1Q)
         phi_IQ = inverse_mod(d1, 2**self.e)*(xx_Q*phi_1P + yy_Q*phi_1Q)
 
+        print(self.P.weil_pairing(self.Q, 2**self.e)**N_I)
+        print(phi_IP.weil_pairing(phi_IQ, 2**self.e))
+
         return E_I, phi_IP, phi_IQ

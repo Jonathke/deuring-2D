@@ -34,8 +34,6 @@ def TestIdealToIsogeny():
         ll = next_prime(l)
     alpha = ctx.O0.FullRepresentInteger(l*ll)
     I = ctx.O0.order * l + ctx.O0.order * alpha
-    print(SuccessiveMinima(I.right_order()))
-    print(SuccessiveMinima(I.left_order()))
     E_I, phi_IP, phi_IQ = ctx.IdealToIsogeny(I)
 
     print(E_I)
