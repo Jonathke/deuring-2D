@@ -1,3 +1,5 @@
+#!/usr/bin/env sage
+
 from deuring import *
 from special_extremal import *
 from quaternions import *
