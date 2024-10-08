@@ -52,23 +52,28 @@ class Deuring2D:
 
     def EvalEndomorphism(self, alpha, P, ord):
 
-        assert P.curve() == self.E0
+        assert not self.E0.defining_polynomial()(*P)
         assert P*ord == 0
 
         d = lcm(c.denominator() for c in alpha)
 
         if gcd(d, ord) == 2:
             #TODO should probably make sure this doesnt need to be called
-            alpha = d*alpha
-            Fbig, _ = self.F.extension(4,'A').objgen()
-            Ebig = self.E0.base_extend(Fbig)
-            P = Ebig(P).division_points(2)[0]
+            alpha = 2*alpha
+            try:
+                P = P.division_points(2)[0]
+            except IndexError:
+                Fbig, _ = self.F.extension(4,'A').objgen()
+                Ebig = self.E0.base_extend(Fbig)
+                P = Ebig(P).division_points(2)[0]
+        elif gcd(d, ord) > 1:
+            raise NotImplementedError('denominators > 2 are currently unsupported')
 
         iP = self.iota(P)
         jP = self.pi(P)
         kP = self.iota(jP)
         coeffs = [coeff % (ord*d) for coeff in alpha]
-        return self.E0(sum(c*Q for c, Q in zip(coeffs, [P, iP, jP, kP])))
+        return P.curve()(sum(c*Q for c, Q in zip(coeffs, [P, iP, jP, kP])))
 
 
     def FixedDegreeIsogeny(self, u):
