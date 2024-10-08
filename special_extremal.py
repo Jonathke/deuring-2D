@@ -31,10 +31,9 @@ class SpecialExtremalOrder:
     def RepresentInteger(self, N):
         if N < self.p:
             x, y, found = self.Cornacchia(N)
-            if found:
-                return x + y*self.i
-            else:
-                raise ValueError
+            if not found:
+                return None
+            return x + y*self.i
         m1 = max(floor(sqrt(round((N)/self.p, 5))), 100)
         for _ in range(1000):
             z = randint(-m1, m1)
