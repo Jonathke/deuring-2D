@@ -1,4 +1,4 @@
-from deuring import *
+from deuring2d import *
 from special_extremal import *
 from quaternions import *
 
