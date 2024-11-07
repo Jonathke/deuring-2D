@@ -76,7 +76,7 @@ class Deuring2D:
         jP = self.pi(P)
         kP = self.iota(jP)
         coeffs = [coeff % (ord*d) for coeff in alpha]
-        return P.curve()(sum(c*Q for c, Q in zip(coeffs, [P, iP, jP, kP])))
+        return self.E0(sum(c*Q for c, Q in zip(coeffs, [P, iP, jP, kP])))
 
 
     def FixedDegreeIsogeny(self, u, *, theta=None):
@@ -181,6 +181,7 @@ class Deuring2D:
 
         beta_1P = self.EvalEndomorphism(beta_1, self.P, 2**self.e)
         beta_1Q = self.EvalEndomorphism(beta_1, self.Q, 2**self.e)
+
         xx_P, yy_P = BiDLP(beta_1P, self.P, self.Q, 2**self.e)
         xx_Q, yy_Q = BiDLP(beta_1Q, self.P, self.Q, 2**self.e)
 
