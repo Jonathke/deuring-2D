@@ -5,6 +5,9 @@ from product_isogeny import IsogenyProduct
 from utilities.discrete_log import BiDLP
 
 class Deuring2D:
+
+    class Failure(Exception): pass
+
     def __init__(self, p):
         if p % 4 != 3:
             raise NotImplementedError
@@ -52,23 +55,28 @@ class Deuring2D:
 
     def EvalEndomorphism(self, alpha, P, ord):
 
-        assert P.curve() == self.E0
+        assert not self.E0.defining_polynomial()(*P)
         assert P*ord == 0
 
         d = lcm(c.denominator() for c in alpha)
 
         if gcd(d, ord) == 2:
             #TODO should probably make sure this doesnt need to be called
-            alpha = d*alpha
-            Fbig, _ = self.F.extension(4,'A').objgen()
-            Ebig = self.E0.base_extend(Fbig)
-            P = Ebig(P).division_points(2)[0]
+            alpha = 2*alpha
+            try:
+                P = P.division_points(2)[0]
+            except IndexError:
+                Fbig, _ = self.F.extension(4,'A').objgen()
+                Ebig = self.E0.base_extend(Fbig)
+                P = Ebig(P).division_points(2)[0]
+        elif gcd(d, ord) > 1:
+            raise NotImplementedError('denominators > 2 are currently unsupported')
 
         iP = self.iota(P)
         jP = self.pi(P)
         kP = self.iota(jP)
         coeffs = [coeff % (ord*d) for coeff in alpha]
-        return self.E0(sum(c*Q for c, Q in zip(coeffs, [P, iP, jP, kP])))
+        return P.curve()(sum(c*Q for c, Q in zip(coeffs, [P, iP, jP, kP])))
 
 
     def FixedDegreeIsogeny(self, u):
@@ -78,6 +86,8 @@ class Deuring2D:
         assert u < 2**self.e
 
         theta = self.O0.RepresentInteger(u*(2**self.e - u))
+        if not theta:
+            raise self.Failure(f'could not represent integer {u}*(2^{self.e}-{u})')
         assert theta.reduced_norm() == u*(2**self.e - u)
         thetaP = self.EvalEndomorphism(theta, self.P, 2**self.e)
         thetaQ = self.EvalEndomorphism(theta, self.Q, 2**self.e)
@@ -114,20 +124,26 @@ class Deuring2D:
             u = Integer(u/(2**e1))
             v = Integer(v/(2**e1))
             f = self.e - e1
-            return beta_1, beta_2, u, v, f
-        
-        raise ValueError
+            yield beta_1, beta_2, u, v, f
 
     def IdealToIsogeny(self, I):
         # Input: Ideal I
         # Output: E_I
-        beta_1, beta_2, u, v, f = self.SuitableIdeals(I)
-        N_I = I.norm()
-        d1 = beta_1.reduced_norm()/N_I
-        theta = (beta_2*beta_1.conjugate())/N_I
 
-        Phi_u, uP, uQ = self.FixedDegreeIsogeny(u)
-        Phi_v, vP, vQ = self.FixedDegreeIsogeny(v)
+        N_I = I.norm()
+
+        for beta_1, beta_2, u, v, f in self.SuitableIdeals(I):
+            d1 = beta_1.reduced_norm()/N_I
+            theta = (beta_2*beta_1.conjugate())/N_I
+
+            try:
+                Phi_u, uP, uQ = self.FixedDegreeIsogeny(u)
+                Phi_v, vP, vQ = self.FixedDegreeIsogeny(v)
+            except self.Failure:
+                continue
+            break
+        else:
+            raise self.Failure('could not find any suitable ideals')
 
         e1 = 2**(self.e-f)
 
