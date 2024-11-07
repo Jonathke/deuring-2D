@@ -79,15 +79,20 @@ class Deuring2D:
         return P.curve()(sum(c*Q for c, Q in zip(coeffs, [P, iP, jP, kP])))
 
 
-    def FixedDegreeIsogeny(self, u):
+    def FixedDegreeIsogeny(self, u, *, theta=None):
         # Input: Odd integer u, basis P, Q of E_0[2^e]
         # Output: phi: E_0 -> E, a u-isogeny embedded in a (2^e, 2^e)-isogeny
         assert u%2 == 1
         assert u < 2**self.e
 
-        theta = self.O0.RepresentInteger(u*(2**self.e - u))
+        if theta is None:
+            try:
+                theta = self.O0.RepresentInteger(u * (2**self.e - u))
+            except self.Failure:
+                pass
         if not theta:
             raise self.Failure(f'could not represent integer {u}*(2^{self.e}-{u})')
+
         assert theta.reduced_norm() == u*(2**self.e - u)
         thetaP = self.EvalEndomorphism(theta, self.P, 2**self.e)
         thetaQ = self.EvalEndomorphism(theta, self.Q, 2**self.e)
@@ -124,26 +129,39 @@ class Deuring2D:
             u = Integer(u/(2**e1))
             v = Integer(v/(2**e1))
             f = self.e - e1
-            yield beta_1, beta_2, u, v, f
 
-    def IdealToIsogeny(self, I):
+            d1 = beta_1.reduced_norm()/N_I
+            theta = (beta_2*beta_1.conjugate())/N_I
+
+            try:
+                theta_u = self.O0.RepresentInteger(u * (2**self.e - u))
+                theta_v = self.O0.RepresentInteger(v * (2**self.e - v))
+            except self.Failure:
+                continue
+
+            yield beta_1, beta_2, u, v, f, theta_u, theta_v
+
+    def IdealToIsogeny(self, I, *, suitable=None):
         # Input: Ideal I
         # Output: E_I
 
         N_I = I.norm()
 
-        for beta_1, beta_2, u, v, f in self.SuitableIdeals(I):
-            d1 = beta_1.reduced_norm()/N_I
-            theta = (beta_2*beta_1.conjugate())/N_I
-
+        if suitable is None:
             try:
-                Phi_u, uP, uQ = self.FixedDegreeIsogeny(u)
-                Phi_v, vP, vQ = self.FixedDegreeIsogeny(v)
-            except self.Failure:
-                continue
-            break
-        else:
+                suitable = next(self.SuitableIdeals(I))
+            except StopIteration:
+                pass
+        if suitable is None:
             raise self.Failure('could not find any suitable ideals')
+
+        beta_1, beta_2, u, v, f, theta_u, theta_v = suitable
+
+        d1 = beta_1.reduced_norm()/N_I
+        theta = (beta_2*beta_1.conjugate())/N_I
+
+        Phi_u, uP, uQ = self.FixedDegreeIsogeny(u, theta=theta_u)
+        Phi_v, vP, vQ = self.FixedDegreeIsogeny(v, theta=theta_v)
 
         e1 = 2**(self.e-f)
 
