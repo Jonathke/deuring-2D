@@ -103,7 +103,7 @@ class Deuring2D:
         basis_I = ReducedBasis(I.basis())
         N_I = I.norm()
         d = ceil(300*sqrt(self.p))
-        Bs = [floor(sqrt(d/(alpha.reduced_norm()/N_I))/4) for alpha in basis_I]
+        Bs = [isqrt(d/(alpha.reduced_norm()/N_I))//4 for alpha in basis_I]
         print([RR(log(lam/N_I, self.p)) for lam in SuccessiveMinima(I)])
         print(Bs)
         temp = basis_I[0]*basis_I[1].conjugate()

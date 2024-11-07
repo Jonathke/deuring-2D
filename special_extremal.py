@@ -34,10 +34,10 @@ class SpecialExtremalOrder:
             if not found:
                 return None
             return x + y*self.i
-        m1 = max(floor(sqrt(round((N)/self.p, 5))), 100)
+        m1 = max(isqrt(N/self.p), 100)
         for _ in range(1000):
             z = randint(-m1, m1)
-            m2 = floor(sqrt(round((N-z**2)/self.p, 5)))
+            m2 = isqrt((N-z**2)/self.p)
             w = randint(-m2, m2)
             Mm = N - self.p*self.QF(z,w)
             x, y, found = self.Cornacchia(Mm)
@@ -57,10 +57,10 @@ class SpecialExtremalOrder:
             else:
                 raise ValueError
             
-        m1 = max(floor(sqrt(round((4*N)/self.p, 5))), 100)
+        m1 = max(isqrt(4*N/self.p), 100)
         for _ in range(1000):
             z = randint(-m1, m1)
-            m2 = floor(sqrt(round((4*N-z**2)/self.p, 5)))
+            m2 = isqrt((4*N-z**2)/self.p)
             w = randint(-m2, m2)
             Mm = 4*N - self.p*self.QF(z,w)
             x, y, found = self.Cornacchia(Mm)
