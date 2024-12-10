@@ -133,10 +133,9 @@ class Deuring2D:
             d1 = beta_1.reduced_norm()/N_I
             theta = (beta_2*beta_1.conjugate())/N_I
 
-            try:
-                theta_u = self.O0.RepresentInteger(u * (2**self.e - u))
-                theta_v = self.O0.RepresentInteger(v * (2**self.e - v))
-            except self.Failure:
+            if (theta_u := self.O0.RepresentInteger(u * (2**self.e - u))) is None:
+                continue
+            if (theta_v := self.O0.RepresentInteger(v * (2**self.e - v))) is None:
                 continue
 
             yield beta_1, beta_2, u, v, f, theta_u, theta_v
