@@ -104,15 +104,15 @@ class Deuring2D:
         return Phi, uP, uQ
 
 
-    def SuitableIdeals(self, I):
+    def SuitableIdeals(self, I, *, attempts=100000, bound=1000):
         basis_I = ReducedBasis(I.basis())
         N_I = I.norm()
-        d = ceil(300*sqrt(self.p))
+        d = isqrt(bound**2 * self.p)
         Bs = [isqrt(d/(alpha.reduced_norm()/N_I))//4 for alpha in basis_I]
         print([RR(log(lam/N_I, self.p)) for lam in SuccessiveMinima(I)])
         print(Bs)
         temp = basis_I[0]*basis_I[1].conjugate()
-        for _ in range(100000):
+        for _ in range(attempts):
             xs = [randint(-B, B) for B in Bs]
             ys = [randint(-B, B) for B in Bs]
             beta_1 = sum(x*alpha for x, alpha in zip(xs, basis_I))
