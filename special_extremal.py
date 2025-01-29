@@ -28,14 +28,14 @@ class SpecialExtremalOrder:
             return None, None, False
         return sol[0], sol[1], True
     
-    def RepresentInteger(self, N):
+    def RepresentInteger(self, N, *, attempts=1000):
         if N < self.p:
             x, y, found = self.Cornacchia(N)
             if not found:
                 return None
             return x + y*self.i
         m1 = max(isqrt(N/self.p), 100)
-        for _ in range(1000):
+        for _ in range(attempts):
             z = randint(-m1, m1)
             m2 = isqrt((N-z**2)/self.p)
             w = randint(-m2, m2)
@@ -49,7 +49,7 @@ class SpecialExtremalOrder:
                 return gamma
 
     # Is there any reason to use this for us? Want to avoid using to avoid point division.
-    def FullRepresentInteger(self, N):
+    def FullRepresentInteger(self, N, *, attempts=1000):
         if N < self.p:
             x, y, found = self.Cornacchia(N)
             if found:
@@ -58,7 +58,7 @@ class SpecialExtremalOrder:
                 raise ValueError
             
         m1 = max(isqrt(4*N/self.p), 100)
-        for _ in range(1000):
+        for _ in range(attempts):
             z = randint(-m1, m1)
             m2 = isqrt((4*N-z**2)/self.p)
             w = randint(-m2, m2)
@@ -71,4 +71,3 @@ class SpecialExtremalOrder:
                 gamma = MakePrimitive(gamma,self.order)
                 if gamma.reduced_norm() == N:
                     return gamma
-        
