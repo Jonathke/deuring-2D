@@ -18,57 +18,62 @@ class SpecialExtremalOrder:
         self.QF = BinaryQF([1,0,q])
         
     def Cornacchia(self, N):
-        if N < 0:
-            return None, None, False
-        N_prime = prod([l**e for l, e in factor(N, limit=100) if l < 100])
-        if N > 2**100 and not is_pseudoprime(N/N_prime):
-            return None, None, False
-        sol = self.QF.solve_integer(N)
-        if not sol:
-            return None, None, False
-        return sol[0], sol[1], True
+        assert N > 0
+        smallfacs = [l**e for l,e in factor(N, limit=1000) if l < 1000]
+        N_prime = prod(smallfacs)
+        if len(smallfacs) > 5 or not is_pseudoprime(N // N_prime):
+            # self.QF.solve_integer() will be expensive -- bail out
+            return
+        algo = ('general', 'cornacchia')[is_pseudoprime(N)]
+        return self.QF.solve_integer(N, algorithm=algo)
     
     def RepresentInteger(self, N):
         if N < self.p:
-            x, y, found = self.Cornacchia(N)
-            if not found:
-                return None
+            if not (sol := self.Cornacchia(N)):
+                return
+            x, y = sol
             return x + y*self.i
-        m1 = max(isqrt(N/self.p), 100)
+
+        m1 = isqrt(N / self.p)
+        assert N - self.p * m1**2 > 0
+
         for _ in range(1000):
             z = randint(-m1, m1)
-            m2 = isqrt((N-z**2)/self.p)
+            m2 = isqrt(N / self.p - z**2)
+            assert 4*N - self.p * self.QF(z, m2) > 0
             w = randint(-m2, m2)
-            Mm = N - self.p*self.QF(z,w)
-            x, y, found = self.Cornacchia(Mm)
-            if not found:
+            Mm = N - self.p * self.QF(z, w)
+            if not (sol := self.Cornacchia(Mm)):
                 continue
+            x, y = sol
             gamma = x + y*self.i + z*self.j + w*self.k
-            gamma = MakePrimitive(gamma,self.order)
+            gamma = MakePrimitive(gamma, self.order)
             if gamma.reduced_norm() == N:
                 return gamma
 
     # Is there any reason to use this for us? Want to avoid using to avoid point division.
     def FullRepresentInteger(self, N):
         if N < self.p:
-            x, y, found = self.Cornacchia(N)
-            if found:
-                return x + y*self.i
-            else:
+            if not (sol := self.Cornacchia(N)):
                 raise ValueError
+            x, y = sol
+            return x + y*self.i
             
-        m1 = max(isqrt(4*N/self.p), 100)
+        m1 = isqrt(4*N / self.p)
+        assert 4*N - self.p * m1**2 > 0
+
         for _ in range(1000):
             z = randint(-m1, m1)
-            m2 = isqrt((4*N-z**2)/self.p)
+            m2 = isqrt(4*N / self.p - z**2)
+            assert 4*N - self.p * self.QF(z, m2) > 0
             w = randint(-m2, m2)
-            Mm = 4*N - self.p*self.QF(z,w)
-            x, y, found = self.Cornacchia(Mm)
-            if not found:
+            Mm = 4*N - self.p*self.QF(z, w)
+            if not (sol := self.Cornacchia(Mm)):
                 continue
+            x, y = sol
             if x % 2 == w % 2 and y % 2 == z % 2 and gcd([x,y,z,w]) == 1:
                 gamma = x + y*self.i + z*self.j + w*self.k
                 gamma = MakePrimitive(gamma,self.order)
                 if gamma.reduced_norm() == N:
                     return gamma
-        
+

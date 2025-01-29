@@ -109,8 +109,7 @@ class Deuring2D:
         N_I = I.norm()
         d = isqrt(bound**2 * self.p)
         Bs = [isqrt(d/(alpha.reduced_norm()/N_I))//4 for alpha in basis_I]
-        print([RR(log(lam/N_I, self.p)) for lam in SuccessiveMinima(I)])
-        print(Bs)
+        print(Bs, [RR(log(lam/N_I, self.p)) for lam in SuccessiveMinima(I)], file=sys.stderr)
         temp = basis_I[0]*basis_I[1].conjugate()
         for _ in range(attempts):
             xs = [randint(-B, B) for B in Bs]
@@ -154,6 +153,8 @@ class Deuring2D:
         if suitable is None:
             raise self.Failure('could not find any suitable ideals')
 
+        print('found a suitable ideal!', file=sys.stderr)
+
         beta_1, beta_2, u, v, f, theta_u, theta_v = suitable
 
         d1 = beta_1.reduced_norm()/N_I
@@ -187,7 +188,6 @@ class Deuring2D:
         phi_IP = inverse_mod(d1, 2**self.e)*(xx_P*phi_1P + yy_P*phi_1Q)
         phi_IQ = inverse_mod(d1, 2**self.e)*(xx_Q*phi_1P + yy_Q*phi_1Q)
 
-        print(self.P.weil_pairing(self.Q, 2**self.e)**N_I)
-        print(phi_IP.weil_pairing(phi_IQ, 2**self.e))
+        assert self.P.weil_pairing(self.Q, 2**self.e)**N_I == phi_IP.weil_pairing(phi_IQ, 2**self.e)
 
         return E_I, phi_IP, phi_IQ
