@@ -27,17 +27,14 @@ class SpecialExtremalOrder:
         algo = ('general', 'cornacchia')[is_pseudoprime(N)]
         return self.QF.solve_integer(N, algorithm=algo)
     
-    def RepresentInteger(self, N):
+    def RepresentInteger(self, N, *, attempts=1000):
         if N < self.p:
             if not (sol := self.Cornacchia(N)):
                 return
             x, y = sol
             return x + y*self.i
-
-        m1 = isqrt(N / self.p)
-        assert N - self.p * m1**2 > 0
-
-        for _ in range(1000):
+        m1 = max(isqrt(N/self.p), 100)
+        for _ in range(attempts):
             z = randint(-m1, m1)
             m2 = isqrt(N / self.p - z**2)
             assert 4*N - self.p * self.QF(z, m2) > 0
@@ -52,17 +49,15 @@ class SpecialExtremalOrder:
                 return gamma
 
     # Is there any reason to use this for us? Want to avoid using to avoid point division.
-    def FullRepresentInteger(self, N):
+    def FullRepresentInteger(self, N, *, attempts=1000):
         if N < self.p:
             if not (sol := self.Cornacchia(N)):
                 raise ValueError
             x, y = sol
             return x + y*self.i
             
-        m1 = isqrt(4*N / self.p)
-        assert 4*N - self.p * m1**2 > 0
-
-        for _ in range(1000):
+        m1 = max(isqrt(4*N/self.p), 100)
+        for _ in range(attempts):
             z = randint(-m1, m1)
             m2 = isqrt(4*N / self.p - z**2)
             assert 4*N - self.p * self.QF(z, m2) > 0
@@ -76,4 +71,4 @@ class SpecialExtremalOrder:
                 gamma = MakePrimitive(gamma,self.order)
                 if gamma.reduced_norm() == N:
                     return gamma
-
+                  
