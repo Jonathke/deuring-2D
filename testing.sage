@@ -1,3 +1,4 @@
+#!/usr/bin/env sage
 
 from deuring2d import *
 from special_extremal import *
@@ -35,6 +36,8 @@ def TestIdealToIsogeny():
     #    ll = next_prime(randint(2**20, 2**21))
     ll = next_prime(randint(2**50, 2**51))
     alpha = ctx.O0.FullRepresentInteger(l*ll)
+    if alpha is None:
+        raise Exception('test failed: FullRepresentInteger() did not find alpha')
     I = ctx.O0.order * l + ctx.O0.order * alpha
     E_I, phi_IP, phi_IQ = ctx.IdealToIsogeny(I)
 
@@ -52,6 +55,8 @@ def TestIdealToIsogenyBig():
     #    ll = next_prime(randint(2**20, 2**21))
     ll = next_prime(randint(p, 100*p))
     alpha = ctx.O0.FullRepresentInteger(l*ll)
+    if alpha is None:
+        raise Exception('test failed: FullRepresentInteger() did not find alpha')
     I = ctx.O0.order * l + ctx.O0.order * alpha
     E_I, phi_IP, phi_IQ = ctx.IdealToIsogeny(I)
 
@@ -64,3 +69,4 @@ if __name__=="__main__":
     TestFixedDegreeIsogeny()
     TestIdealToIsogeny()
     TestIdealToIsogenyBig()
+
