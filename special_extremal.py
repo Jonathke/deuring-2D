@@ -33,7 +33,10 @@ class SpecialExtremalOrder:
                 return
             x, y = sol
             return x + y*self.i
-        m1 = max(isqrt(N/self.p), 100)
+
+        m1 = isqrt(N / self.p)
+        assert N - self.p * m1**2 > 0
+
         for _ in range(attempts):
             z = randint(-m1, m1)
             m2 = isqrt(N / self.p - z**2)
@@ -56,7 +59,9 @@ class SpecialExtremalOrder:
             x, y = sol
             return x + y*self.i
             
-        m1 = max(isqrt(4*N/self.p), 100)
+        m1 = isqrt(4*N / self.p)
+        assert 4*N - self.p * m1**2 > 0
+
         for _ in range(attempts):
             z = randint(-m1, m1)
             m2 = isqrt(4*N / self.p - z**2)
@@ -71,4 +76,4 @@ class SpecialExtremalOrder:
                 gamma = MakePrimitive(gamma,self.order)
                 if gamma.reduced_norm() == N:
                     return gamma
-                  
+
