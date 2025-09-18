@@ -1,8 +1,9 @@
 from sage.all import *
 from special_extremal import SpecialExtremalOrder
-from quaternions import ReducedBasis, SuccessiveMinima
+from quaternions import ReducedBasis, SuccessiveMinima, reduced_ideal
 from product_isogeny import IsogenyProduct
 from utilities.discrete_log import BiDLP
+from qlapoti.qlapoti import solve as qlapoti
 
 class Deuring2D:
 
@@ -104,67 +105,24 @@ class Deuring2D:
         return Phi, uP, uQ
 
 
-    def SuitableIdeals(self, I, *, attempts=100000, bound=1000):
-        basis_I = ReducedBasis(I.basis())
-        N_I = I.norm()
-        d = isqrt(bound**2 * self.p)
-        Bs = [isqrt(d/(alpha.reduced_norm()/N_I))//4 for alpha in basis_I]
-        print(Bs, [RR(log(lam/N_I, self.p)) for lam in SuccessiveMinima(I)], file=sys.stderr)
-        temp = basis_I[0]*basis_I[1].conjugate()
-        for _ in range(attempts):
-            xs = [randint(-B, B) for B in Bs]
-            ys = [randint(-B, B) for B in Bs]
-            beta_1 = sum(x*alpha for x, alpha in zip(xs, basis_I))
-            beta_2 = sum(y*alpha for y, alpha in zip(ys, basis_I))
-            d1, d2 = beta_1.reduced_norm()/N_I, beta_2.reduced_norm()/N_I
-            if d1 % 2 == 0 or d2 % 2 == 0 or gcd(d1, d2) > 1:
-                continue
-            u = (2**self.e*inverse_mod(d1, d2)) % d2
-            v = (2**self.e - u*d1)/d2
-            if v <= 0:
-                continue
-            assert u*d1 + v*d2 == 2**self.e
-            e1 = min(u.valuation(2), v.valuation(2))
-            u = Integer(u/(2**e1))
-            v = Integer(v/(2**e1))
-            f = self.e - e1
-
-            d1 = beta_1.reduced_norm()/N_I
-            theta = (beta_2*beta_1.conjugate())/N_I
-
-            if (theta_u := self.O0.RepresentInteger(u * (2**self.e - u))) is None:
-                continue
-            if (theta_v := self.O0.RepresentInteger(v * (2**self.e - v))) is None:
-                continue
-
-            yield beta_1, beta_2, u, v, f, theta_u, theta_v
-
     def IdealToIsogeny(self, I, *, suitable=None):
         # Input: Ideal I
         # Output: E_I
-
         N_I = I.norm()
-
+        J, beta_ij = reduced_ideal(I, return_elt=True)
+        N_J = J.norm()
         if suitable is None:
-            try:
-                suitable = next(self.SuitableIdeals(I))
-            except StopIteration:
-                pass
+            print("Running qlapoti...")
+            suitable = qlapoti(J, 2**self.e, transporters=True)#, verbose=True)
         if suitable is None:
             raise self.Failure('could not find any suitable ideals')
 
         print('found a suitable ideal!', file=sys.stderr)
 
-        beta_1, beta_2, u, v, f, theta_u, theta_v = suitable
+        beta_1, beta_2 = suitable
 
-        d1 = beta_1.reduced_norm()/N_I
-        theta = (beta_2*beta_1.conjugate())/N_I
-
-        Phi_u, uP, uQ = self.FixedDegreeIsogeny(u, theta=theta_u)
-        Phi_v, vP, vQ = self.FixedDegreeIsogeny(v, theta=theta_v)
-
-        e1 = 2**(self.e-f)
-
+        d1 = beta_1.reduced_norm()/N_J
+        theta = (beta_2*beta_1.conjugate())/N_J
         thetaP = self.EvalEndomorphism(theta, self.P, 2**self.e)
         thetaQ = self.EvalEndomorphism(theta, self.Q, 2**self.e)
 
@@ -174,13 +132,12 @@ class Deuring2D:
         assert thetaP == x_P*self.P + y_P*self.Q
         assert thetaQ == x_Q*self.P + y_Q*self.Q
 
-        Phi = IsogenyProduct(e1*d1*uP, e1*(x_P*vP + y_P*vQ), e1*d1*uQ, e1*(x_Q*vP + y_Q*vQ), f)
-        E_I, phi_1P, phi_1Q = Phi.TwoTorsionImage(uP, uQ, self.e, d1*u)
-        phi_1P = inverse_mod(u, 2**self.e)*phi_1P
-        phi_1Q = inverse_mod(u, 2**self.e)*phi_1Q
+        Phi = IsogenyProduct(d1*self.P, thetaP, d1*self.Q, thetaQ, self.e, self.iota)
+        E_I, phi_1P, phi_1Q = Phi.TwoTorsionImage(self.P, self.Q, self.e, d1)
 
-        beta_1P = self.EvalEndomorphism(beta_1, self.P, 2**self.e)
-        beta_1Q = self.EvalEndomorphism(beta_1, self.Q, 2**self.e)
+        correction_quat = (beta_1*beta_ij/N_J)
+        beta_1P = self.EvalEndomorphism(correction_quat, self.P, 2**self.e)
+        beta_1Q = self.EvalEndomorphism(correction_quat, self.Q, 2**self.e)
 
         xx_P, yy_P = BiDLP(beta_1P, self.P, self.Q, 2**self.e)
         xx_Q, yy_Q = BiDLP(beta_1Q, self.P, self.Q, 2**self.e)

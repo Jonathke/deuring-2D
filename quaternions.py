@@ -33,3 +33,19 @@ def ReducedBasis(basis):
 
 def SuccessiveMinima(L):
     return [RR(alpha.reduced_norm()) for alpha in ReducedBasis(L.basis())]
+
+def reduced_basis(I):
+    B = I.basis()
+    G = gram_matrix(I.basis())
+    U = G.LLL_gram().transpose()
+    return [sum(c*beta for c, beta in zip(row, B)) for row in U]
+
+def reduced_ideal(I, return_elt=False):
+    reduced_basis_elements = reduced_basis(I)
+    beta = reduced_basis_elements[0]
+    J = I*(beta.conjugate()/I.norm())
+    assert J.conjugate().is_right_equivalent(I.conjugate())
+    if return_elt:
+        return J, beta
+    return J
+

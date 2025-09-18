@@ -1,0 +1,3 @@
+[submodule "qlapoti"]
+	path = qlapoti
+	url = https://github.com/yyyyx4/qlapoti-sage.git

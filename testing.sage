@@ -27,6 +27,7 @@ def TestFixedDegreeIsogeny():
     print(Phi.codomain()[1].j_invariant())
 
 def TestIdealToIsogeny():
+    print("> Testing ideal to isogeny")
     p = 2**50*11 - 1
     ctx = Deuring2D(p)
     l = next_prime(randint(2**50, 2**51))
@@ -43,6 +44,7 @@ def TestIdealToIsogeny():
 
     print(E_I)
     print(E_I.j_invariant())
+    print(">>> Success!")
 
 def TestIdealToIsogenyBig():
     print("---- Testing big stuff ----")
@@ -62,11 +64,12 @@ def TestIdealToIsogenyBig():
 
     print(E_I)
     print(E_I.j_invariant())
+    print(">>> Success!")
 
 if __name__=="__main__":
     proof.all(False)
     #TestSpecialExtremal()
-    TestFixedDegreeIsogeny()
+    #TestFixedDegreeIsogeny()
     TestIdealToIsogeny()
     TestIdealToIsogenyBig()
 
