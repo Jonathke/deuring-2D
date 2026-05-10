@@ -3,81 +3,59 @@ from special_extremal import SpecialExtremalOrder
 from quaternions import ReducedBasis, SuccessiveMinima, reduced_ideal
 from product_isogeny import IsogenyProduct
 from utilities.discrete_log import BiDLP
-from qlapoti.qlapoti import solve as qlapoti
+try:
+    from qlapoti.qlapoti import solve as qlapoti
+except ModuleNotFoundError:
+    from qlapoti import solve as qlapoti
 
 class Deuring2D:
 
     class Failure(Exception): pass
 
-    def __init__(self, p):
-        if p % 4 != 3:
-            raise NotImplementedError
-        self.p = p
+    def __init__(self, p=None, E0=None, O0=None, iota=None):
 
-        self.O0 = SpecialExtremalOrder(self.p, 1)
+        if p is not None:
+            if not all(t is None for t in (E0, O0, iota)):
+                raise ValueError('need either (just) p or (all of) E0,O0,iota')
 
-        self.F = GF((p, 2), name = "i", modulus=[1,0,1])
-        self.E0 = EllipticCurve(self.F, [1, 0])
-        self.e = Integer(p+1).valuation(2) #can add -1 here to avoid field extensions
-        
+            if p % 4 != 3:
+                raise NotImplementedError
+
+            self.O0 = SpecialExtremalOrder(p, 1)
+
+            self.F = GF((p, 2), name="i", modulus=[1,0,1])
+            self.E0 = EllipticCurve(self.F, [1, 0])
+
+            self.iota = self.E0.automorphisms()[-1]
+            self.pi = self.E0.frobenius_isogeny()
+
+        else:
+            if any(t is None for t in (E0, O0, iota)):
+                raise ValueError('need either (just) p or (all of) E0,O0,iota')
+
+            self.E0 = E0
+            self.F = self.E0.base_field()
+            q, p = (-i for i in O0.quaternion_algebra().invariants())
+            assert q == iota.degree()
+            assert p == E0.base_field().characteristic()
+            self.O0 = SpecialExtremalOrder(p, q, order=O0)
+            self.iota = iota
+            self.pi = self.E0.frobenius_isogeny()
+
         #generate 2-torsion basis
-        cofac = (p+1)/(2**self.e)
-        while True:
-            P = self.E0.random_point()*cofac
-            P_small = P*2**(self.e-1)
-            if P_small:
-                break
-        while True:
-            Q = self.E0.random_point()*cofac
-            Q_small = Q*2**(self.e-1)
-            if Q_small and Q_small != P_small:
-                break
-
-        self.P = P
-        self.Q = Q
-
-        self.sqrtm1 = self.F(-1).sqrt()
-
-        def endo_i(P):
-            Ebig = P.curve()
-            Fbig = Ebig.base_field()
-            x, y = P.xy()
-            return Ebig(-x, Fbig(self.sqrtm1)*y)
-        
-        def endo_j(P):
-            Ebig = P.curve()
-            pi = Ebig.base_field().frobenius_endomorphism()
-            x,y = P.xy()
-            return Ebig(pi(x), pi(y))
-        
-        self.iota = endo_i
-        self.pi = endo_j
+        self.e = Integer(p+1).valuation(2)  # can add -1 here to avoid field extensions
+        self.P, self.Q = self.E0.torsion_basis(2**self.e)
 
 
     def EvalEndomorphism(self, alpha, P, ord):
-
-        assert not self.E0.defining_polynomial()(*P)
-        assert P*ord == 0
-
+        P.set_order(ord)
         d = lcm(c.denominator() for c in alpha)
-
-        if gcd(d, ord) == 2:
-            #TODO should probably make sure this doesnt need to be called
-            alpha = 2*alpha
-            try:
-                P = P.division_points(2)[0]
-            except IndexError:
-                Fbig, _ = self.F.extension(4,'A').objgen()
-                Ebig = self.E0.base_extend(Fbig)
-                P = Ebig(P).division_points(2)[0]
-        elif gcd(d, ord) > 1:
-            raise NotImplementedError('denominators > 2 are currently unsupported')
-
-        iP = self.iota(P)
-        jP = self.pi(P)
-        kP = self.iota(jP)
-        coeffs = [coeff % (ord*d) for coeff in alpha]
-        return self.E0(sum(c*Q for c, Q in zip(coeffs, [P, iP, jP, kP])))
+        endo = sum(ZZ(c)*phi for c,phi in zip(alpha*d, (self.E0.identity_morphism(), self.iota, self.pi, self.iota * self.pi)))
+        endo._degree = ZZ((alpha * d).reduced_norm())
+        from sage.schemes.elliptic_curves.hom_fractional import EllipticCurveHom_fractional
+        endo = EllipticCurveHom_fractional(endo, d, check=False)
+        endo._degree = ZZ(alpha.reduced_norm())
+        return endo._eval(P)
 
 
     def FixedDegreeIsogeny(self, u, *, theta=None):

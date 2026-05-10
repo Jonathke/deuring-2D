@@ -4,8 +4,8 @@ from quaternions import MakePrimitive
 # proof.all(False)
 # Class for a special p-extremal order, with corresponding functions
 class SpecialExtremalOrder:
-    def __init__(self, p, q):
-        if not (p % 4 == 3 and q == 1):
+    def __init__(self, p, q, order=None):
+        if order is None and not (p % 4 == 3 and q == 1):
             raise NotImplementedError
         self.p = p
         self.q = q
@@ -14,7 +14,10 @@ class SpecialExtremalOrder:
         self.i = i
         self.j = j
         self.k = k
-        self.order = B.quaternion_order([1, i, (i+j)/2, (1+k)/2])
+        if order is None:
+            self.order = B.quaternion_order([1, i, (i+j)/2, (1+k)/2])
+        else:
+            self.order = order
         self.QF = BinaryQF([1,0,q])
         
     def Cornacchia(self, N):

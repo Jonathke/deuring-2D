@@ -46,6 +46,22 @@ def TestIdealToIsogeny():
     print(E_I.j_invariant())
     print(">>> Success!")
 
+def TestIdealToIsogenyOwn():
+    print("> Testing ideal to isogeny (with externally supplied order)")
+    p = 2**127 - 1
+    F.<i> = GF((p, 2), modulus=[1,0,1])
+    E0 = EllipticCurve(F, [73300411938425210204353420537549415058, 96840771522044021527333883178334690669])
+    q = 23
+    iota = E0.isogeny([155415534247160515642272280914556724100, 148981912015670309004775159867160076038, 61025058819502448980768543275782209691, 151212779892207632179602417493632419553, 71209404954542770202672836886535034920, 147669429963117838129792671368121776970, 9398173484427566967687441310036216901, 134509300987373454650287121289856282090, 163854451224215204029367366925403956845, 12159765651977588628590571553508757087, 152735015202933157213038210414289363095, 1], codomain=E0)
+    assert iota.degree() == q
+    Quat.<i,j,k> = QuaternionAlgebra(-q, -p)
+    O0 = Quat.quaternion_order([Quat.one(), 1/2 + 1/2*i, j, 6/23*i + 1/2*j + 1/46*k])
+    ctx = Deuring2D(E0=E0, O0=O0, iota=iota)
+    l = next_prime(randint(2**50, 2**51))
+    I = O0.random_ideal('left', l)
+    E_I, phi_IP, phi_IQ = ctx.IdealToIsogeny(I)
+    print(">>> Success!")
+
 def TestIdealToIsogenyBig():
     print("---- Testing big stuff ----")
     p = 2**500*27 - 1
@@ -71,5 +87,6 @@ if __name__=="__main__":
     #TestSpecialExtremal()
     #TestFixedDegreeIsogeny()
     TestIdealToIsogeny()
+    TestIdealToIsogenyOwn()
     TestIdealToIsogenyBig()
 
